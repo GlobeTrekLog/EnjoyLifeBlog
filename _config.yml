@@ -58,16 +58,16 @@ kramdown:
 
 # 评论系统
 # Disqus（https://disqus.com/）
-disqus_username: globetrek
+#disqus_username: globetrek
 
 # Gitalk
 gitalk:
   enable: true    #是否开启Gitalk评论
-  clientID: f2c84e7629bb1446c1a4                            #生成的clientID
-  clientSecret: ca6d6139d1e1b8c43f8b2e19492ddcac8b322d0d    #生成的clientSecret
-  repo: qiubaiying.github.io    #仓库名称
-  owner: qiubaiying    #github用户名
-  admin: qiubaiying
+  clientID: 1885af40eabd4497f258                            #生成的clientID
+  clientSecret: ebd78dad887a6f88781627b2cfd0ad43035aa829    #生成的clientSecret
+  repo: EnjoyLifeBlog    #仓库名称
+  owner: GlobeTrekLog    #github用户名
+  admin: GlobeTrekLog
   distractionFreeMode: true #是否启用类似FB的阴影遮罩
 
 
