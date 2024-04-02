@@ -11,7 +11,7 @@
 
 
 博客的搭建教程修改自 [Hux](https://github.com/Huxpro/huxpro.github.io) 
- 
+
 更为详细的教程戳这 [《利用 GitHub Pages 快速搭建个人博客》](http://www.jianshu.com/p/e68fba58f75c) 或 [wiki](https://github.com/qiubaiying/qiubaiying.github.io/wiki/%E5%8D%9A%E5%AE%A2%E6%90%AD%E5%BB%BA%E8%AF%A6%E7%BB%86%E6%95%99%E7%A8%8B)
 
 >
@@ -122,7 +122,7 @@ featured-condition-size: 1     # A tag will be featured if the size of it is mor
 ```
 
 唯一需要注意的是`featured-condition-size`: 如果一个标签的 SIZE，也就是使用该标签的文章数大于上面设定的条件值，这个标签就会在首页上被推荐。
- 
+
 内部有一个条件模板 `{% if tag[1].size > {{site.featured-condition-size}} %}` 是用来做筛选过滤的.
 
 ### Social-media Account
@@ -136,8 +136,9 @@ featured-condition-size: 1     # A tag will be featured if the size of it is mor
 	facebook_username:  username
 	github_username:    username
 	# weibo_username:   username
-	
-	
+
+
+​	
 
 ![](http://ww4.sinaimg.cn/large/006tKfTcgy1fgrgbgf77aj308i02v748.jpg)
 
@@ -239,7 +240,7 @@ ga_domain: huangxuan.me			# 默认的是 auto, 这里我是自定义了的域名
 ### Header Image
 
 博客每页的标题底图是可以自己选的，看看几篇示例post你就知道如何设置了。
-  
+
 标题底图的选取完全是看个人的审美了。每一篇文章可以有不同的底图，你想放什么就放什么，最后宽度要够，大小不要太大，否则加载慢啊。
 
 > 上传的图片最好先压缩，这里推荐 imageOptim 图片压缩软件，让你的博客起飞。
@@ -251,6 +252,76 @@ ga_domain: huangxuan.me			# 默认的是 auto, 这里我是自定义了的域名
 我的博客标题是 **“BY Blog”** 但是我想要在搜索的时候显示 **“柏荧的博客 | BY Blog”** ，这个就需要 SEO Title 来定义了。
 
 其实这个 SEO Title 就是定义了<head><title>标题</title></head>这个里面的东西和多说分享的标题，你可以自行修改的。
+
+### 本地部署运行
+
+#### 第1步：安装 Jekyll 和 Bundler（如果你还没有安装）
+
+- 打开命令行或终端。
+- 切换到你的站点目录：
+
+  ```
+  cd {yourusername}
+  ```
+- 确保你已经安装了 Ruby 和 Bundler。Jekyll 是一个 Ruby 应用，所以需要 Ruby 环境。
+
+- 安装 Jekyll 和 bundler gems：
+
+  ```
+  gem install jekyll bundler
+  ```
+
+这一步会在你的机器上安装 Jekyll 和 Bundler。Jekyll 是一个静态网站生成器，而 Bundler 是一个用于管理 Ruby 应用程序依赖的工具。
+
+#### 第2步：运行 Jekyll 站点
+
+1. **创建一个新的 Jekyll 网站**：
+
+   ```
+   jekyll new my-awesome-site
+   ```
+
+   这一命令会创建一个名为 `my-awesome-site` 的新目录，里面包含了一个新的 Jekyll 网站的初始结构和内容。
+
+2. **进入网站目录**：
+
+   ```
+   cd my-awesome-site
+   ```
+
+   进入你刚刚创建的 Jekyll 网站的目录。
+
+3. **安装依赖**：
+
+   ```
+   bundle install
+   ```
+
+   这一步会根据 `Gemfile` 中列出的依赖来安装需要的 gems。
+
+4. **启动 Jekyll 服务器**：
+
+  ```
+  bundle exec jekyll serve
+  ```
+
+或者简写为
+
+```
+jekyll serve
+或
+jekyll s
+```
+
+这一命令会启动一个开发服务器，允许你在本地预览网站。`bundle exec` 前缀确保了你使用的是项目依赖中指定的 gems 版本。
+
+简单来说，`jekyll serve`（或其简写 `jekyll s`）和 `bundle exec jekyll serve` 都可以用来在本地启动 Jekyll 开发服务器。使用 `bundle exec` 前缀的好处是它会根据你的 `Gemfile.lock` 文件来运行指定版本的 Jekyll，这有助于确保环境的一致性，特别是在团队项目中或当你在多个项目间切换时。
+
+
+5. **浏览器中访问**：
+- 在浏览器中访问 http://127.0.0.1:4000 来查看你的站点。
+
+
 
 ### 关于收到"Page Build Warning"的 Email
 
@@ -267,6 +338,54 @@ ga_domain: huangxuan.me			# 默认的是 auto, 这里我是自定义了的域名
 
 > Note：
 > 可以使用 `jekyll -s` 命令在本地实时配置博客，提高效率。详见 [Jekyll.com](http://jekyllcn.com/)
+
+#### 查看本地 gems 的版本
+
+```
+gem list
+```
+
+这将列出你的系统上安装的所有 gems 及其版本。你可以通过管道命令和 `grep` 搜索特定的 gem。例如，要查找 `jekyll` 的版本，可以使用：
+
+```
+gem list | grep jekyll
+```
+
+**在项目中使用 `bundle list` 或 `bundle show`**：
+
+如果你的项目使用了 Bundler（通过 `Gemfile` 管理依赖），则可以使用以下命令列出项目依赖的 gems 及其版本：
+
+```
+bundle list
+```
+
+或者在较旧的 Bundler 版本中使用：
+
+```
+bundle show
+```
+
+这些命令会列出 `Gemfile.lock` 中记录的所有 gems 和版本，这是你的项目实际使用的版本。
+
+#### 查看 GitHub Pages 使用的 gems 版本
+
+GitHub Pages 使用一组特定的 plugins（gems），这些 plugins 的版本是预设的。要查看 GitHub Pages 当前支持的 plugins 和版本，你可以参考以下两种方法：
+
+1. **GitHub Pages 官方文档**：GitHub 维护一个[依赖版本页面](https://pages.github.com/versions/)，列出了所有 GitHub Pages 环境中使用的 Jekyll 和相关依赖项的版本。这个列表会定期更新，以反映当前环境的实际情况。
+
+2. **使用 `github-pages` gem**：GitHub 提供了一个名为 `github-pages` 的 gem，这个 gem 包括了 GitHub Pages 环境中所有支持的 plugins 和依赖项。要查看特定的 `github-pages` gem 版本及其依赖，首先确保你已经安装了这个 gem：
+
+   ```
+   gem install github-pages
+   ```
+   
+   然后，运行以下命令来列出 `github-pages` gem 及其依赖的版本：
+   
+   ```
+   gem dependency github-pages
+   ```
+
+通过对比本地环境和 GitHub Pages 环境中的 gems 版本，你可以确保你的项目在本地开发时与 GitHub Pages 上运行时尽可能保持一致。这有助于避免由于版本差异导致的构建失败或其他问题。
 
 参考文档：[using jekyll with pages](https://help.github.com/articles/using-jekyll-with-pages/) & [Upgrading from 2.x to 3.x](http://jekyllrb.com/docs/upgrading/2-to-3/)
 
