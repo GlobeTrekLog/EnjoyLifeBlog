@@ -9,7 +9,7 @@ def process_markdown_files(directory):
                 md_file_paths.append(os.path.join(root, file))
 
     # 更精确的查找和替换逻辑
-    url_pattern = re.compile(r'\]\(img/')
+    url_pattern = re.compile(r'\]\(\.\/img/')
     url_replace = r']({{ site.baseurl }}/img/'
 
     for md_file in md_file_paths:
