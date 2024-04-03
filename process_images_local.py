@@ -3,16 +3,16 @@ import re
 import sys
 
 def process_file(file_path, operation):
-    url_pattern_add = re.compile(r'\]\(img/')
+    url_pattern_add = re.compile(r'\]\(\.\/img/')
     url_pattern_remove = re.compile(r'\]\({{ site.baseurl }}/img/')
     url_replace_add = r']({{ site.baseurl }}/img/'
-    url_replace_remove = r'](img/'
+    url_replace_remove = r'](./img/'
 
     with open(file_path, 'r+', encoding='utf-8') as file:
         content = file.read()
-        if operation == "add":
+        if operation == "+":
             updated_content = re.sub(url_pattern_add, url_replace_add, content)
-        elif operation == "remove":
+        elif operation == "-":
             updated_content = re.sub(url_pattern_remove, url_replace_remove, content)
         else:
             print("无效的操作类型")
@@ -31,7 +31,8 @@ def process_directory(directory, operation):
 
 if __name__ == "__main__":
     if len(sys.argv) < 3 or len(sys.argv) > 4:
-        print("使用方法: python process_images.py <文件/目录路径> <add/remove> [指定文件名]")
+        print("使用方法: python process_images.py <文件/目录路径> <+/-> [指定文件名]")
+        print("         +： add;  -： remove")
     else:
         path = sys.argv[1]
         operation = sys.argv[2]
@@ -41,6 +42,7 @@ if __name__ == "__main__":
             specific_file_path = os.path.join(path, specific_file)
             if os.path.exists(specific_file_path) and specific_file_path.endswith(".md"):
                 process_file(specific_file_path, operation)
+                print("处理完成:", specific_file_path)
             else:
                 print("指定的文件不存在或不是Markdown文件")
         else:
@@ -49,5 +51,6 @@ if __name__ == "__main__":
                 process_directory(path, operation)
             elif os.path.isfile(path) and path.endswith(".md"):
                 process_file(path, operation)
+                print("处理完成:", path)
             else:
                 print("路径不是Markdown文件或目录")
