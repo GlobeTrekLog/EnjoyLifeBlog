@@ -243,7 +243,7 @@ ga_domain: huangxuan.me			# 默认的是 auto, 这里我是自定义了的域名
 
 标题底图的选取完全是看个人的审美了。每一篇文章可以有不同的底图，你想放什么就放什么，最后宽度要够，大小不要太大，否则加载慢啊。
 
-> 上传的图片最好先压缩，这里推荐 imageOptim 图片压缩软件，让你的博客起飞。
+> 上传的图片最好先压缩，这里推荐Mac用 [imageOptim](https://imageoptim.iluoxiao.com/others/download) 、Windows用[Riot](https://riot-optimizer.com/download/) 图片压缩软件，让你的博客起飞。
 
 但是需要注意的是本模板的标题是**白色**的，所以背景色要设置为**灰色**或者**黑色**，总之深色系就对了。当然你还可以自定义修改字体颜色，总之，用github pages就是可以完全的个性定制自己的博客。
 
@@ -258,68 +258,105 @@ ga_domain: huangxuan.me			# 默认的是 auto, 这里我是自定义了的域名
 #### 第1步：安装 Jekyll 和 Bundler（如果你还没有安装）
 
 - 打开命令行或终端。
-- 切换到你的站点目录：
+
+- 切换到你的仓库，即git clone下来的目录
 
   ```
-  cd {yourusername}
+  cd 你的仓库
   ```
+  
 - 确保你已经安装了 Ruby 和 Bundler。Jekyll 是一个 Ruby 应用，所以需要 Ruby 环境。
 
-- 安装 Jekyll 和 bundler gems：
+- **安装 Jekyll 和 bundler gems**：这一步会在你的机器上安装 Jekyll 和 Bundler。Jekyll 是一个静态网站生成器，而 Bundler 是一个用于管理 Ruby 应用程序依赖的工具。
 
   ```
   gem install jekyll bundler
   ```
 
-这一步会在你的机器上安装 Jekyll 和 Bundler。Jekyll 是一个静态网站生成器，而 Bundler 是一个用于管理 Ruby 应用程序依赖的工具。
-
 #### 第2步：运行 Jekyll 站点
 
-1. **创建一个新的 Jekyll 网站**：
-
-   ```
-   jekyll new my-awesome-site
-   ```
-
-   这一命令会创建一个名为 `my-awesome-site` 的新目录，里面包含了一个新的 Jekyll 网站的初始结构和内容。
-
-2. **进入网站目录**：
-
-   ```
-   cd my-awesome-site
-   ```
-
-   进入你刚刚创建的 Jekyll 网站的目录。
-
-3. **安装依赖**：
+1. **安装依赖**：这一步会根据 `Gemfile` 中列出的依赖来安装需要的 gems。
 
    ```
    bundle install
    ```
 
-   这一步会根据 `Gemfile` 中列出的依赖来安装需要的 gems。
+   若没有`Gemfile`，再当前目录下新建一个，内容为:
 
-4. **启动 Jekyll 服务器**：
+   ```
+   source "https://rubygems.org"
+   
+   #gem "jekyll", "~> 3.9.5"
+   #gem "bundler", "~> 2.5.7"
+   
+   # 例如，如果你使用的是 GitHub Pages，你可能需要：
+   gem "github-pages", group: :jekyll_plugins
+   
+   # 如果你需要其他插件，可以在这里添加
+   # gem "some-other-jekyll-plugin"
+   ```
 
-  ```
-  bundle exec jekyll serve
-  ```
+   
 
-或者简写为
+2. **启动 Jekyll 服务器**：
 
-```
-jekyll serve
-或
-jekyll s
-```
+   ```
+   bundle exec jekyll serve
+   ```
+
+   或者简写为
+
+   ```
+   jekyll serve
+   或
+   jekyll s
+   ```
 
 这一命令会启动一个开发服务器，允许你在本地预览网站。`bundle exec` 前缀确保了你使用的是项目依赖中指定的 gems 版本。
 
 简单来说，`jekyll serve`（或其简写 `jekyll s`）和 `bundle exec jekyll serve` 都可以用来在本地启动 Jekyll 开发服务器。使用 `bundle exec` 前缀的好处是它会根据你的 `Gemfile.lock` 文件来运行指定版本的 Jekyll，这有助于确保环境的一致性，特别是在团队项目中或当你在多个项目间切换时。
 
 
-5. **浏览器中访问**：
+3. **浏览器中访问**：
 - 在浏览器中访问 http://127.0.0.1:4000 来查看你的站点。
+
+  
+  
+#### 命令合集：
+
+[jekyll介绍](https://jekyllcn.com/docs/home/)， [Dependency Versions - GitHub Pages](https://pages.github.com/versions/)
+
+```
+gem install jekyll            # 安装 Jekyll。 Jekyll 是一个静态网站生成器，
+gem install bundler           # 安装 Bundler。 Bundler 是一个用于管理 Ruby 应用程序依赖的工具。
+                              
+gem install jekyll -v '3.9.5' # 安装指定版本
+jekyll -v                     # 安装指定版本
+
+jekyll new my-awesome-site    # 创建一个名为 `my-awesome-site` 的新目录
+
+cd my-awesome-site            # 进入你刚刚创建的 Jekyll 网站的目录。
+
+bundle install                # 根据 Gemfile 中列出的依赖来安装需要的 gems。
+
+bundle exec jekyll serve      # 启动一个开发服务器，允许你在本地预览网站。网址：http://127.0.0.1:4000 
+jekyll serve                  # 同上
+jekyll s                      # 同上
+
+jekyll serve --incremental    # 尝试清除Jekyll的缓存。强制Jekyll重新构建网站
+
+gem uninstall jekyll          # 卸载 Jekyll， 若卸载所有版本，追加 -a。
+
+gem uninstall bundler         # 卸载 Bundler，若卸载所有版本，追加 -a。
+
+gem list                      # 查找已安装的 gems，带版本号
+gem list --no-versions        # 查找已安装的 gems，带版本号
+gem uninstall -aIx name       # 卸载 name
+
+
+```
+
+
 
 
 
