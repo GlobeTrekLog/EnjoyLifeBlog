@@ -1,0 +1,29 @@
+name: Process Images in Markdown
+
+on:
+  push:
+    branches:
+      - main  # 或你使用的分支
+
+jobs:
+  process-images:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.x'
+
+      - name: Process Markdown files
+        run: python process_images.py
+
+      - name: Commit and push if changed
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add -A
+          git diff --staged --quiet || git commit -m "Automatically process image paths in Markdown"
+          git push
