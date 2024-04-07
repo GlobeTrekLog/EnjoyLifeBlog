@@ -267,11 +267,19 @@ ga_domain: huangxuan.me			# 默认的是 auto, 这里我是自定义了的域名
   
 - 确保你已经安装了 Ruby 和 Bundler。Jekyll 是一个 Ruby 应用，所以需要 Ruby 环境。
 
-- **安装 Jekyll 和 bundler gems**：这一步会在你的机器上安装 Jekyll 和 Bundler。Jekyll 是一个静态网站生成器，而 Bundler 是一个用于管理 Ruby 应用程序依赖的工具。
+- **安装 Jekyll 和 bundler gems**：这一步会在你的机器上安装 Jekyll 和 Bundler。Jekyll 是一个静态网站生成器，而 Bundler 是一个用于管理 Ruby 应用程序依赖的工具。把“github-pages” 相关的依赖工具都安装。见：[Dependency versions ，GitHub Pages](https://pages.github.com/versions/)
 
+  ```
+  gem install github-pages
+  ```
+  
+  下面这句不必执行。
+  
   ```
   gem install jekyll bundler
   ```
+  
+  
 
 #### 第2步：运行 Jekyll 站点
 
@@ -286,11 +294,11 @@ ga_domain: huangxuan.me			# 默认的是 auto, 这里我是自定义了的域名
    ```
    source "https://rubygems.org"
    
+   # 例如，如果你使用的是 GitHub Pages：
+   gem "github-pages", group: :jekyll_plugins
+   
    #gem "jekyll", "~> 3.9.5"
    #gem "bundler", "~> 2.5.7"
-   
-   # 例如，如果你使用的是 GitHub Pages，你可能需要：
-   gem "github-pages", group: :jekyll_plugins
    
    # 如果你需要其他插件，可以在这里添加
    # gem "some-other-jekyll-plugin"
@@ -327,9 +335,11 @@ ga_domain: huangxuan.me			# 默认的是 auto, 这里我是自定义了的域名
 [jekyll介绍](https://jekyllcn.com/docs/home/)， [Dependency Versions - GitHub Pages](https://pages.github.com/versions/)
 
 ```
-gem install jekyll            # 安装 Jekyll。 Jekyll 是一个静态网站生成器，
+gem install github-pages      # 安装github依赖选项
+
 gem install bundler           # 安装 Bundler。 Bundler 是一个用于管理 Ruby 应用程序依赖的工具。
-                              
+gem install jekyll            # 安装 Jekyll。 Jekyll 是一个静态网站生成器。
+
 gem install jekyll -v '3.9.5' # 安装指定版本
 jekyll -v                     # 安装指定版本
 
@@ -423,6 +433,26 @@ GitHub Pages 使用一组特定的 plugins（gems），这些 plugins 的版本�
    ```
 
 通过对比本地环境和 GitHub Pages 环境中的 gems 版本，你可以确保你的项目在本地开发时与 GitHub Pages 上运行时尽可能保持一致。这有助于避免由于版本差异导致的构建失败或其他问题。
+
+#### gem比较慢，换源的办法
+
+```
+# 列出已有源
+gem sources -l
+# 添加清华镜像源并移除默认源
+gem sources --add https://mirrors.tuna.tsinghua.edu.cn/rubygems/ --remove https://rubygems.org/
+
+或者
+bundle config mirror.https://rubygems.org https://mirrors.tuna.tsinghua.edu.cn/rubygems
+```
+
+或者，编辑 `~/.gemrc`，将
+
+```
+https://mirrors.tuna.tsinghua.edu.cn/rubygems/
+```
+
+
 
 参考文档：[using jekyll with pages](https://help.github.com/articles/using-jekyll-with-pages/) & [Upgrading from 2.x to 3.x](http://jekyllrb.com/docs/upgrading/2-to-3/)
 
