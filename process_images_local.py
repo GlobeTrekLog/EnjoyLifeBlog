@@ -32,7 +32,8 @@ def process_directory(directory, operation):
 if __name__ == "__main__":
     if len(sys.argv) < 3 or len(sys.argv) > 4:
         print("使用方法: python process_images.py <文件/目录路径> <+/-> [指定文件名]")
-        print("         +： add;  -： remove")
+        print("         +： add imgurl;  -： remove imgurl")
+        print("Usage:   python process_images.py test.md +")
     else:
         path = sys.argv[1]
         operation = sys.argv[2]
