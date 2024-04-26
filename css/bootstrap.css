@@ -63,7 +63,6 @@ dfn {
 h1 {
   margin: .67em 0;
   font-size: 2em;
-  mix-blend-mode: difference; /* 根据背景自动调整颜色以突出差异 */
 }
 mark {
   color: #000;
