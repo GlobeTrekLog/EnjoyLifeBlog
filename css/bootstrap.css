@@ -63,10 +63,7 @@ dfn {
 h1 {
   margin: .67em 0;
   font-size: 2em;
-  color: white;
-  background-color: rgba(0, 0, 0, 0.5); /* 黑色半透明背景 */
-  display: inline; /* 使背景仅围绕文本 */
-  padding: 5px 10px; /* 文本周围的间距 */
+  mix-blend-mode: difference; /* 根据背景自动调整颜色以突出差异 */
 }
 mark {
   color: #000;
