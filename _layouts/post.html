@@ -58,7 +58,9 @@ layout: default
                 col-md-10 col-md-offset-1
                 post-container">
 
-				{{ content }}
+				<!-- {{ content }} -->
+                {{ content | replace: 'src="./img', 'src="' | append: site.baseurl | append: '/img' | replace: 'src="img', 'src="' | append: site.baseurl | append: '/img' }}
+
 
                 <hr style="visibility: hidden;">
 
