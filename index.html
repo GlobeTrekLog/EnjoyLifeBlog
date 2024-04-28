@@ -19,11 +19,7 @@ description: "Enjoy, Interesting, Useful."
         </div>
     </a>
     <p class="post-meta">
-        Posted by {% if post.author %}{{ post.author }}{% else %}{{ site.title }}{% endif %} on {{ post.date | date: "%B %-d, %Y" }}
-        <p>Debug Date: {{ post.date }}</p>
-        <p>Debug Formatted Date: {{ post.date | date: "%B %-d, %Y" }}</p>
-        <p>Debug Original Date: {{ post.date }}</p>
-        <p>Debug Formatted Date: {{ post.date | date: "%Y-%m-%d %H:%M:%S" }}</p>
+        Posted by {% if post.author %}{{ post.author }}{% else %}{{ site.title }}{% endif %} on {{ post.date | date: "%Y-%m-%d %H:%M:%S" }}
         <p>Debug Timezone: {{ site.timezone }}</p>
 
     </p>
