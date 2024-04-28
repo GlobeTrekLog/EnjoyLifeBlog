@@ -89,6 +89,42 @@ tags:
 
 ```
 
+## 添加图片
+
+添加图片有两种方式：
+
+1.`./img/`方式
+
+图片存放路径在`EnjoyLifeBlog/img/文件名.assets/`下面
+
+```markdown
+![图片描述](./img/文件名.assets/图片名称.jpg)
+```
+
+2.`{{ site.baseurl }}/img/`方式
+
+图片存放路径在`EnjoyLifeBlog/img/文件名.assets/`下面
+
+```markdown
+![图片描述]({{ site.baseurl }}/img/文件名.assets/图片名称.jpg)
+```
+
+注：对于第1中方式能正确显示，修改了`EnjoyLifeBlo/_layouts/post.html`中的`{{ content }}` 。使用替换的语法：
+
+查找`src="./img` 替换为`src="/EnjoyLifeBlog/img`
+
+```html
+{{ content | replace: 'src="./img', 'src="/EnjoyLifeBlog/img' | replace: 'src="img', 'src="/EnjoyLifeBlog/img' }}
+```
+
+**使用技巧：**
+
+若使用了typora来写md文件， 设置图像默认路径为`./img/${filename}.assets`正好符合第一种方式。
+
+添加到博客路径时，要把`${filename}.assets`文件夹移动到`EnjoyLifeBlog/img/`下面。
+
+
+
 ### 侧边栏
 
 看右边:
