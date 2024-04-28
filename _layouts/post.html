@@ -58,9 +58,12 @@ layout: default
                 col-md-10 col-md-offset-1
                 post-container">
 
-				<!-- {{ content }} -->
+				        <!-- {{ content }} -->
                 <!-- {{ content | replace: 'src="./img', 'src="' | append: site.baseurl | append: '/img' | replace: 'src="img', 'src="' | append: site.baseurl | append: '/img' }} -->
-                {{ content | replace: 'src="./img', 'src="' | append: '/EnjoyLifeBlog/img' | replace: 'src="img', 'src="' | append: site.baseurl | append: '/img' }}
+                <!-- {{ content | replace: 'src="./img', 'src="' | append: '/EnjoyLifeBlog/img' | replace: 'src="img', 'src="' | append: site.baseurl | append: '/img' }} -->
+                {% assign base_img_url = site.baseurl | append: '/img' %}
+                {{ content | replace: 'src="./img', 'src="' | append: base_img_url | replace: 'src="img', 'src="' | append: base_img_url }}
+
                 <!-- {{ content | replace: 'src="./img', 'src="/EnjoyLifeBlog/img' | replace: 'src="img', 'src="/EnjoyLifeBlog/img' }} -->
                 <!-- {{ content | replace: 'src="/', 'src="' | append: site.baseurl | append: '/' }} -->
 
