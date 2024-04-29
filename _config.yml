@@ -34,11 +34,11 @@ permalink: pretty
 paginate: 10
 exclude: ["less","node_modules","Gruntfile.js","package.json","README.md"]
 anchorjs: true                          # if you want to customize anchor. check out line:181 of `post.html`
-
+encoding: UTF-8
 #timezone: Asia/Shanghai     # 中国标准时间，若设置成这个，最终发布的html文件中的时间，要比*.md中的时间早8小时。
 timezone: Etc/UTC  # 表示在没有任何时区偏移的情况下的确切时间，也就是所谓的GMT（格林尼治标准时间，也称为 UTC+0）。如：Mon, 29 Apr 2024 03:53:09 GMT 表示的是协调世界时（GMT）下的时间。
-#future: true  # 告诉 Jekyll 允许包括设定在未来日期的帖子
-encoding: UTF-8
+future: true  # 告诉 Jekyll 允许包括设定在未来日期的帖子
+
 
 # Gems
 # from PR#40, to support local preview for Jekyll 3.0
