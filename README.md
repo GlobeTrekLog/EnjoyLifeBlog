@@ -79,7 +79,7 @@ layout:     post
 title:      定时器 你真的会使用吗？
 subtitle:   iOS定时器详解
 date:       2023-05-21
-author:     Enjoy
+author:     EnjoyLife
 header-img: img/post-bg-coffee.jpg
 catalog: 	true
 tags:
