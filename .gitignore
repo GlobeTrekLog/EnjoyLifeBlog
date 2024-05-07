@@ -34,3 +34,4 @@ my-awesome-site
 
 # debug file
 _site
+~*.xlsx
