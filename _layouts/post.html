@@ -59,7 +59,7 @@ layout: default
                 post-container">
 
                 <!-- {{ content }} -->
-                {{ content | replace: 'src="./img', 'src="/EnjoyLifeBlog/img' | replace: 'src="img', 'src="/EnjoyLifeBlog/img' }}
+                {{ content | replace: 'src="./img', 'src="/EnjoyLifeBlog/img' | replace: 'src="./../img', 'src="/EnjoyLifeBlog/img' | replace: 'src="img', 'src="/EnjoyLifeBlog/img' }}
 
                 <hr style="visibility: hidden;">
 
