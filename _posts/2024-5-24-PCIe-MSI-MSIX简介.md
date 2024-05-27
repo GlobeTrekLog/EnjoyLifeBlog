@@ -138,8 +138,11 @@ MSI-X Table由多个Entry组成，其中每个Entry与一个中断请求对应�
 
 ### 4. 设备怎么使用MSI/MSI-x中断？
 
-  传统中断在系统初始化扫描PCI bus tree时就已自动为设备分配好中断号, 但是如果设备需要使用MSI，驱动需要进行一些额外的配置。
-  当前linux内核提供pci_alloc_irq_vectors来进行MSI/MSI-X capablity的初始化配置以及中断号分配。
+传统中断在系统初始化扫描PCI bus tree时就已自动为设备分配好中断号, 但是如果设备需要使用MSI，驱动需要进行一些额外的配置。
+
+#### pci_alloc_irq_vectors()初始化配置以及中断号分配
+
+当前linux内核提供pci_alloc_irq_vectors来进行MSI/MSI-X capablity的初始化配置以及中断号分配。
 
 ```c
 int pci_alloc_irq_vectors(struct pci_dev *dev, 
@@ -148,40 +151,70 @@ int pci_alloc_irq_vectors(struct pci_dev *dev,
                           unsigned int flags);
 ```
 
-函数的返回值为该PCI设备分配的中断向量个数。
-`min_vecs`是设备对中断向量数目的最小要求，如果小于该值，会返回错误。
-`max_vecs`是期望分配的中断向量最大个数。
-flags用于区分设备和驱动能够使用的中断类型，一般有4种：
+- `函数的返回值`：为该PCI设备分配的中断向量个数。
+- `min_vecs`：是设备对中断向量数目的最小要求，如果小于该值，会返回错误。
+- `max_vecs`：是期望分配的中断向量最大个数。
+- `flags`：用于区分设备和驱动能够使用的中断类型，一般有4种：
 
 ```c
 #define PCI_IRQ_LEGACY		(1 << 0) /* Allow legacy interrupts */
 #define PCI_IRQ_MSI		    (1 << 1) /* Allow MSI interrupts */
 #define PCI_IRQ_MSIX		(1 << 2) /* Allow MSI-X interrupts */
-#define PCI_IRQ_AFFINITY	(1 << 3) /* Auto-assign affinity */
+#define PCI_IRQ_AFFINITY	(1 << 3) /* Auto-assign affinity, 将中断分布到系统中的多个 CPU 核心上*/
 #define PCI_IRQ_ALL_TYPES \
-	(PCI_IRQ_LEGACY | PCI_IRQ_MSI | PCI_IRQ_MSIX)
+        (PCI_IRQ_LEGACY | PCI_IRQ_MSI | PCI_IRQ_MSIX)    //可以用来请求任何可能类型的中断。
 ```
 
-PCI_IRQ_ALL_TYPES可以用来请求任何可能类型的中断。
-此外还可以额外的设置PCI_IRQ_AFFINITY, 用于将中断分布在可用的cpu上。
+`PCI_IRQ_ALL_TYPES`可以用来请求任何可能类型的中断。
+
+`PCI_IRQ_AFFINITY`可以作为额外的设置，目的将中断分布到系统中的多个 CPU 核心上，以优化系统性能和负载平衡。有以下三点作用。
+
+**中断负载平衡**：在多核系统中，如果所有中断都由一个 CPU 核心处理，可能会导致该核心负载过重，影响系统性能。通过启用 `PCI_IRQ_AFFINITY`，内核可以将中断分布到多个 CPU 核心上，避免某个核心负载过重，从而提高系统整体性能。
+
+**优化中断处理延迟**：通过将中断分布到多个 CPU 核心上，可以减少中断处理延迟，提高系统响应速度。特别是在高性能计算或需要低延迟的应用场景中，这种优化尤为重要。
+
+**提高系统吞吐量**：多个 CPU 核心并行处理中断，可以提高系统的总吞吐量，使系统能够处理更多的中断请求。
+
+在启用 `PCI_IRQ_AFFINITY` 时，内核会自动将中断向量分布到系统中的可用 CPU 核心上。具体分布策略由内核决定，可以通过查看 `/proc/interrupts` 文件来检查中断向量的分布情况。
+
 使用示例:
 
- i = pci_alloc_irq_vectors(dev->pdev, min_msix, msi_count, PCI_IRQ_MSIX | PCI_IRQ_AFFINITY);
+```c
+// 例子一
+i = pci_alloc_irq_vectors(pdev, min_msix, msi_count, PCI_IRQ_MSIX | PCI_IRQ_AFFINITY);
 
-与之对应的是释放中断资源的函数pci_free_irq_vectors(), 需要在设备remove时调用：
+//例子二
+int nvec;
+nvec = pci_alloc_irq_vectors(pdev, 1, nvec, PCI_IRQ_ALL_TYPES | PCI_IRQ_AFFINITY);
+if (nvec < 0) {
+    goto out_err;
+}
+```
 
+与之对应的是**释放中断资源**的函数`pci_free_irq_vectors()`, 需要在设备remove时调用：
+
+```
 void pci_free_irq_vectors(struct pci_dev *dev);
+```
 
-此外，linux还提供了pci_irq_vector()用于获取IRQ number.
+此外，linux还提供了`pci_irq_vector()`用于获取IRQ number.
 
+```
 int pci_irq_vector(struct pci_dev *dev, unsigned int nr);
+```
+
+
 
 
 ### 5. 设备的MSI/MSI-x中断是怎样处理的？
-5.1 MSI的中断分配pci_alloc_irq_vectors()
+5.1 MSI的中断分配`pci_alloc_irq_vectors()`
 深入理解下pci_alloc_irq_vectors()
-pci_alloc_irq_vectors() --> pci_alloc_irq_vectors_affinity()
 
+`pci_alloc_irq_vectors()` --> `pci_alloc_irq_vectors_affinity()`
+
+
+
+```c
 int pci_alloc_irq_vectors_affinity(struct pci_dev *dev, unsigned int min_vecs,
 				   unsigned int max_vecs, unsigned int flags,
 				   struct irq_affinity *affd)
@@ -190,22 +223,22 @@ int pci_alloc_irq_vectors_affinity(struct pci_dev *dev, unsigned int min_vecs,
 	int msix_vecs = -ENOSPC;
 	int msi_vecs = -ENOSPC;
 
-	if (flags & PCI_IRQ_AFFINITY) {                        
-		if (!affd)
+	if (flags & PCI_IRQ_AFFINITY) { //如果flags包含PCI_IRQ_AFFINITY标志，表示需要设置中断亲和性。
+		if (!affd) //如果affd（中断亲和性描述符）为空，则将其设置为msi_default_affd（默认中断亲和性描述符）。
 			affd = &msi_default_affd;
-	} else {
+	} else { //如果flags不包含PCI_IRQ_AFFINITY标志，但affd不为空，则发出警告并将affd设置为空，表示不需要中断亲和性。
 		if (WARN_ON(affd))
 			affd = NULL;
 	}
 	
-	if (flags & PCI_IRQ_MSIX) {
+	if (flags & PCI_IRQ_MSIX) { // 启用MSI-X中断，并返回分配的MSI-X向量数量。
 		msix_vecs = __pci_enable_msix_range(dev, NULL, min_vecs,
 						    max_vecs, affd, flags);               ------(1)
 		if (msix_vecs > 0)
 			return msix_vecs;
 	}
 	
-	if (flags & PCI_IRQ_MSI) {
+	if (flags & PCI_IRQ_MSI) { // 启用MSI中断，并返回分配的MSI向量数量。
 		msi_vecs = __pci_enable_msi_range(dev, min_vecs, max_vecs,
 						  affd);                             ----- (2)
 		if (msi_vecs > 0)
@@ -220,28 +253,34 @@ int pci_alloc_irq_vectors_affinity(struct pci_dev *dev, unsigned int min_vecs,
 			 * the device driver can adjust queue configuration
 			 * for the single interrupt case.
 			 */
-			if (affd)
+			if (affd)  //如果存在中断亲和性描述符（affd），则调用irq_create_affinity_masks函数创建中断亲和性掩码。
 				irq_create_affinity_masks(1, affd);
 			pci_intx(dev, 1);                                 ------ (3)
 			return 1;
 		}
 	}
 	
-	if (msix_vecs == -ENOSPC)                
+	if (msix_vecs == -ENOSPC) //表示没有足够的资源分配MSI-X向量
 		return -ENOSPC;
-	return msi_vecs;
+	return msi_vecs;  //表示分配的MSI向量数量
+
 }
+```
 
 (1) 先确认申请的是否为MSI-X中断
 
-__pci_enable_msix_range()
-	+-> __pci_enable_msix()
-		+-> msix_capability_init()
-			+-> pci_msi_setup_msi_irqs()
+```
+pci_alloc_irq_vectors_affinity()
+    +-> __pci_enable_msix_range()
+        +-> __pci_enable_msix()
+            +-> msix_capability_init()
+                +-> pci_msi_setup_msi_irqs()
+```
 
 msix_capability_init会对msi capability进行一些配置。
 关键函数pci_msi_setup_msi_irqs， 会创建msi irq number:
 
+```c
 static int pci_msi_setup_msi_irqs(struct pci_dev *dev, int nvec, int type)
 {
 	struct irq_domain *domain;
@@ -251,49 +290,61 @@ static int pci_msi_setup_msi_irqs(struct pci_dev *dev, int nvec, int type)
 		return msi_domain_alloc_irqs(domain, &dev->dev, nvec);
 	
 	return arch_setup_msi_irqs(dev, nvec, type);
+
 }
+```
 
 这里的irq_domain获取的是pcie device结构体中定义的dev->msi_domain.
 这里的msi_domain是在哪里定义的呢？
 在drivers/irqchip/irq-gic-v3-its-pci-msi.c中， kernel启动时会:
 
+```c
 its_pci_msi_init()
 	+-> its_pci_msi_init()
 		+-> its_pci_msi_init_one()
 			+-> pci_msi_create_irq_domain(handle, &its_pci_msi_domain_info,parent)
+```
 
 pci_msi_create_irq_domain中会去创建pci_msi irq_domain, 传递的参数分别是its_pci_msi_domain_info以及设置parent为its irq_domain.
 所以现在逻辑就比较清晰：
 
 gic中断控制器初始化时会去add gic irq_domain, gic irq_domain是its irq_domain的parent节点，its irq_domain中的host data对应的pci_msi irq_domain.
 
-        gic irq_domain --> irq_domain_ops(gic_irq_domain_ops)
-              ^                --> .alloc(gic_irq_domain_alloc)
-              |
-        its irq_domain --> irq_domain_ops(its_domain_ops)
-              ^                --> .alloc(its_irq_domain_alloc)
-              |                --> ...
-              |        --> host_data(struct msi_domain_info)
-              |            --> msi_domain_ops(its_msi_domain_ops)
-              |                --> .msi_prepare(its_msi_prepare)
-              |            --> irq_chip, chip_data, handler...
-              |            --> void *data(struct its_node)
-    pci_msi irq_domain对应的ops:
+```c
+    gic irq_domain --> irq_domain_ops(gic_irq_domain_ops)
+          ^                --> .alloc(gic_irq_domain_alloc)
+          |
+    its irq_domain --> irq_domain_ops(its_domain_ops)
+          ^                --> .alloc(its_irq_domain_alloc)
+          |                --> ...
+          |        --> host_data(struct msi_domain_info)
+          |            --> msi_domain_ops(its_msi_domain_ops)
+          |                --> .msi_prepare(its_msi_prepare)
+          |            --> irq_chip, chip_data, handler...
+          |            --> void *data(struct its_node)
+```
+
+pci_msi irq_domain对应的ops:
+
+```c
 static const struct irq_domain_ops msi_domain_ops = {
         .alloc          = msi_domain_alloc,
         .free           = msi_domain_free,
         .activate       = msi_domain_activate,
         .deactivate     = msi_domain_deactivate,
 };
+```
 
 
 回到上面的pci_msi_setup_msi_irqs()函数，获取了pci_msi irq_domain后， 调用msi_domain_alloc_irqs()函数分配IRQ number.
 
+```c
 msi_domain_alloc_irqs()
 	// 对应的是its_pci_msi_ops中的its_pci_msi_prepare
 	+-> msi_domain_prepare_irqs()
 	// 分配IRQ number
 	+-> __irq_domain_alloc_irqs()
+```
 
 msi_domain_prepare_irqs()对应的是its_msi_prepare函数，会去创建一个its_device.
 __irq_domain_alloc_irqs()会去分配虚拟中断号，从allocated_irq位图中取第一个空闲的bit位作为虚拟中断号。
@@ -306,6 +357,7 @@ __irq_domain_alloc_irqs()会去分配虚拟中断号，从allocated_irq位图中
 5.2 MSI的中断注册
 kernel/irq/manage.c
 
+```c
 request_irq()
     +-> __setup_irq()
     	+-> irq_activate()
@@ -315,14 +367,131 @@ request_irq()
         			// irq_chip对应的是pci_msi_create_irq_domain中关联的its_msi_irq_chip
             		+-> data->chip->irq_write_msi_msg(data, msg);
             				+-> pci_msi_domain_write_msg()
+```
 
 从这个流程可以看出，MSI是通过irq_write_msi_msg往一个地址发一个消息来激活一个中断。
 
+
+
+### 中断亲和性描述符（affd）
+
+中断亲和性描述符（affd，全称为`irq_affinity_desc`）是用于在多核系统中分配和管理中断亲和性（IRQ affinity）的结构体。中断亲和性用于将中断请求分配到特定的CPU核心，从而优化系统性能和负载平衡。
+
+#### 作用
+
+中断亲和性描述符用于描述和管理中断与CPU核心之间的关联，确保中断请求被合理分配到不同的CPU核心，以避免某个核心负载过重，提高系统整体性能。
+
+#### 结构体定义
+
+在Linux内核中，中断亲和性描述符通常由`struct irq_affinity`表示。该结构体包含了描述中断亲和性的信息，如中断分配策略、CPU核心掩码等。
+
+```c
+struct irq_affinity {
+    unsigned int pre_vectors;
+    unsigned int post_vectors;
+    unsigned int nr_sets;
+    const struct cpumask *mask;
+    struct cpumask *set_masks;
+    struct cpumask *sets;
+    unsigned int *set_size;
+    unsigned int calc_sets;
+    irq_create_affinity_masks_fn calc_sets;
+};
+```
+
+- `pre_vectors`：在计算亲和性之前保留的中断向量数量。
+- `post_vectors`：在计算亲和性之后保留的中断向量数量。
+- `nr_sets`：中断集数量。
+- `mask`：CPU核心掩码。
+- `set_masks`：每个中断集的掩码。
+- `sets`：中断集。
+- `set_size`：每个中断集的大小。
+- `calc_sets`：计算中断亲和性集的函数指针。
+
+#### 使用
+
+`irq_affinity_desc`的使用涉及到以下几个步骤：
+
+1. **初始化描述符**：在分配中断向量之前，初始化中断亲和性描述符。
+2. **设置亲和性掩码**：根据系统配置和硬件特性，设置中断亲和性掩码。
+3. **分配中断向量**：调用函数分配中断向量，并将中断请求分配到特定的CPU核心。
+4. **释放资源**：在设备移除或驱动卸载时，释放中断亲和性相关资源。
+
+#### 调用流程
+
+以下是中断亲和性描述符的典型调用流程：
+
+1. **驱动程序初始化**：
+   - 驱动程序初始化时，会根据设备特性和系统配置初始化`irq_affinity_desc`结构体。
+
+2. **分配中断向量**：
+   - 驱动程序调用`pci_alloc_irq_vectors`函数分配中断向量。如果启用了中断亲和性（即设置了`PCI_IRQ_AFFINITY`标志），则将`irq_affinity_desc`传递给该函数。
+
+3. **内核处理**：
+   - 内核根据传递的`irq_affinity_desc`结构体中的信息，计算并设置中断向量的亲和性掩码，确保中断请求被分配到指定的CPU核心。
+
+4. **中断处理**：
+   - 当中断发生时，中断请求根据设置的亲和性掩码，被发送到特定的CPU核心。中断处理程序在相应的CPU核心上执行。
+
+#### 代码示例
+
+下面是一个简化的代码示例，展示了如何在驱动程序中使用中断亲和性描述符：
+
+```c
+#include <linux/pci.h>
+#include <linux/interrupt.h>
+
+static int my_pci_probe(struct pci_dev *pdev, const struct pci_device_id *id)
+{
+    int nvec, ret;
+    struct irq_affinity desc = {
+        .pre_vectors = 1,
+        .nr_sets = 2,
+        .mask = cpu_online_mask,
+    };
+
+    ret = pci_enable_device(pdev);
+    if (ret)
+        return ret;
+
+    nvec = pci_alloc_irq_vectors(pdev, 1, 8, PCI_IRQ_MSI | PCI_IRQ_AFFINITY);
+    if (nvec < 0) {
+        pci_disable_device(pdev);
+        return nvec;
+    }
+
+    // 其他初始化操作
+
+    return 0;
+}
+
+static void my_pci_remove(struct pci_dev *pdev)
+{
+    pci_free_irq_vectors(pdev);
+    pci_disable_device(pdev);
+}
+
+static struct pci_driver my_pci_driver = {
+    .name = "my_pci_driver",
+    .id_table = my_pci_id_table,
+    .probe = my_pci_probe,
+    .remove = my_pci_remove,
+};
+
+module_pci_driver(my_pci_driver);
+```
+
+### 总结
+
+中断亲和性描述符（affd）用于在多核系统中管理中断与CPU核心之间的关系，以实现中断负载平衡和优化系统性能。它在驱动程序初始化时被设置，并在中断向量分配过程中用于计算和设置中断亲和性掩码。通过合理设置中断亲和性，可以有效提高系统的响应速度和整体性能。
+
+
+
 参考资料
-PCIe扫盲——中断机制介绍（MSI-X）
-PCIe体系结构导读
-MSI/MSI-X Capability结构
-GIC ITS 学习笔记(一)
+[PCIe扫盲——中断机制介绍（MSI-X）](https://www.sohu.com/a/251201563_781333)
+[PCIe体系结构导读](https://book.douban.com/subject/4728656/)
+[MSI/MSI-X Capability结构](MSI/MSI-X Capability结构)
+[GIC ITS 学习笔记(一)](https://blog.csdn.net/scarecrow_byr/article/details/49256813?utm_source=blogxgwz6)
 Documentation/PCI/MSI-HOWTO.txt
 
 
