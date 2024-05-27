@@ -118,6 +118,7 @@ MSI-X Table由多个Entry组成，其中每个Entry与一个中断请求对应�
 
   lspci -v可以查看设备支持的capability, 如果有MSI或者MSI-x或者message signal interrupt的描述，并且这些描述后面都有一个enable的flag, “+”表示enable，"-"表示disable。
 
+```shell
 [root@localhost linux]# lspci -s 00:16.0 -v
 00:16.0 PCI bridge: VMware PCI Express Root Port (rev 01) (prog-if 00 [Normal decode])
 	Flags: bus master, fast devsel, latency 0, IRQ 32
@@ -131,25 +132,35 @@ MSI-X Table由多个Entry组成，其中每个Entry与一个中断请求对应�
 	Capabilities: [8c] MSI: Enable+ Count=1/1 Maskable+ 64bit+
 	Kernel driver in use: pcieport
 	Kernel modules: shpchp
+```
+
+
 
 ### 4. 设备怎么使用MSI/MSI-x中断？
 
   传统中断在系统初始化扫描PCI bus tree时就已自动为设备分配好中断号, 但是如果设备需要使用MSI，驱动需要进行一些额外的配置。
   当前linux内核提供pci_alloc_irq_vectors来进行MSI/MSI-X capablity的初始化配置以及中断号分配。
 
-int pci_alloc_irq_vectors(struct pci_dev *dev, unsigned int min_vecs,
-                unsigned int max_vecs, unsigned int flags);
-
+```c
+int pci_alloc_irq_vectors(struct pci_dev *dev, 
+                          unsigned int min_vecs,
+                          unsigned int max_vecs, 
+                          unsigned int flags);
+```
 
 函数的返回值为该PCI设备分配的中断向量个数。
-min_vecs是设备对中断向量数目的最小要求，如果小于该值，会返回错误。
-max_vecs是期望分配的中断向量最大个数。
+`min_vecs`是设备对中断向量数目的最小要求，如果小于该值，会返回错误。
+`max_vecs`是期望分配的中断向量最大个数。
 flags用于区分设备和驱动能够使用的中断类型，一般有4种：
 
+```c
 #define PCI_IRQ_LEGACY		(1 << 0) /* Allow legacy interrupts */
-#define PCI_IRQ_MSI		(1 << 1) /* Allow MSI interrupts */
+#define PCI_IRQ_MSI		    (1 << 1) /* Allow MSI interrupts */
 #define PCI_IRQ_MSIX		(1 << 2) /* Allow MSI-X interrupts */
-#define PCI_IRQ_ALL_TYPES   (PCI_IRQ_LEGACY | PCI_IRQ_MSI | PCI_IRQ_MSIX)
+#define PCI_IRQ_AFFINITY	(1 << 3) /* Auto-assign affinity */
+#define PCI_IRQ_ALL_TYPES \
+	(PCI_IRQ_LEGACY | PCI_IRQ_MSI | PCI_IRQ_MSIX)
+```
 
 PCI_IRQ_ALL_TYPES可以用来请求任何可能类型的中断。
 此外还可以额外的设置PCI_IRQ_AFFINITY, 用于将中断分布在可用的cpu上。
