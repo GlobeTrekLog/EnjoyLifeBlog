@@ -2,7 +2,7 @@
 layout:     post
 title:      PCIe MSI 简介
 subtitle:   
-date:       2024-5-24 14:23
+date:       2024-05-24 14:23
 author:     EnjoyLife
 header-img: img/post-bg-coffee.jpg
 catalog: 	true
@@ -54,9 +54,9 @@ MSI和MSI-X的规格对比：
 MSI Capability的ID为5， 共有四种组成方式，分别是32和64位的Message结构，32位和64位带中断Masking的结构。
 以带bit mask的capability register为例：
 
-![image-20240524171330152](./img/2024-5-24-PCIe-MSI-MSIX简介.assets/image-20240524171330152.png)
+![image-20240524171330152](./img/2024-05-24-PCIe-MSI-MSIX简介.assets/image-20240524171330152.png)
 
-![image-20240525141909712](./img/2024-5-24-PCIe-MSI-MSIX简介.assets/image-20240525141909712.png)
+![image-20240525141909712](./img/2024-05-24-PCIe-MSI-MSIX简介.assets/image-20240525141909712.png)
 
 
 
@@ -64,7 +64,7 @@ MSI Capability的ID为5， 共有四种组成方式，分别是32和64位的Mess
 **Next Capability Pointer**: 指向下一个新的Capability寄存器的地址.
 **Message Control**： 存放当前PCIe设备使用MSI机制进行中断请求的状态和控制信息
 
-![image-20240524171357651](./img/2024-5-24-PCIe-MSI-MSIX简介.assets/image-20240524171357651.png)
+![image-20240524171357651](./img/2024-05-24-PCIe-MSI-MSIX简介.assets/image-20240524171357651.png)
 
 - MSI enable 控制MSI是否使能，
 - Multiple Message Capable表示设备能够支持的中断向量数量， 
@@ -80,16 +80,16 @@ MSI Capability的ID为5， 共有四种组成方式，分别是32和64位的Mess
 
 MSI-x的capability寄存器结构和MSI有一些差异：
 
-![image-20240524171451900](./img/2024-5-24-PCIe-MSI-MSIX简介.assets/image-20240524171451900.png)
+![image-20240524171451900](./img/2024-05-24-PCIe-MSI-MSIX简介.assets/image-20240524171451900.png)
 
-![image-20240524171521766](./img/2024-5-24-PCIe-MSI-MSIX简介.assets/image-20240524171521766.png)
+![image-20240524171521766](./img/2024-05-24-PCIe-MSI-MSIX简介.assets/image-20240524171521766.png)
 
-![image-20240525155445961](./img/2024-5-24-PCIe-MSI-MSIX简介.assets/image-20240525155445961.png)
+![image-20240525155445961](./img/2024-05-24-PCIe-MSI-MSIX简介.assets/image-20240525155445961.png)
 
 **Capability ID**:记载MSI-X Capability结构的ID号，其值为0x11
 **Message Control**: 存放当前PCIe设备使用MSI-x机制进行中断请求的状态和控制信息
 
-![image-20240525155459625](./img/2024-5-24-PCIe-MSI-MSIX简介.assets/image-20240525155459625.png)
+![image-20240525155459625](./img/2024-05-24-PCIe-MSI-MSIX简介.assets/image-20240525155459625.png)
 
 - MSI-x enable，控制MSI-x的中断使能 ;
 - Function Mask，是中断请求的全局Mask位，如果该位为1，该设备所有的中断请求都将被屏蔽；如果该位为0，则由Per Vector Mask位，决定是否屏蔽相应的中断请求。Per Vector Mask位在MSI-X Table中定义;
@@ -103,13 +103,13 @@ MSI-x的capability寄存器结构和MSI有一些差异：
 通过Table BIR和Table offset知道了MSI-Xtable在哪一个bar中以及在bar中的偏移，就可以找到对应的MSI-X table。
 查找过程如下：
 
-![image-20240525160410386](./img/2024-5-24-PCIe-MSI-MSIX简介.assets/image-20240525160410386.png)
+![image-20240525160410386](./img/2024-05-24-PCIe-MSI-MSIX简介.assets/image-20240525160410386.png)
 
 查找到的MSI-X table结构:
 
 
 
-![image-20240525160451444](./img/2024-5-24-PCIe-MSI-MSIX简介.assets/image-20240525160451444.png)
+![image-20240525160451444](./img/2024-05-24-PCIe-MSI-MSIX简介.assets/image-20240525160451444.png)
 
 MSI-X Table由多个Entry组成，其中每个Entry与一个中断请求对应。
 除了msg data和msg addr外，还有一个vector control的参数，表示PCIe设备是否能够使用该Entry提交中断请求， 类似MSI的mask位。
@@ -263,18 +263,18 @@ int pci_alloc_irq_vectors_affinity(struct pci_dev *dev, unsigned int min_vecs,
 	if (msix_vecs == -ENOSPC) //表示没有足够的资源分配MSI-X向量
 		return -ENOSPC;
 	return msi_vecs;  //表示分配的MSI向量数量
-
 }
 ```
 
 (1) 先确认申请的是否为MSI-X中断
 
-```
-pci_alloc_irq_vectors_affinity()
-    +-> __pci_enable_msix_range()
+```c
+pci_alloc_irq_vectors_affinity() //分配给定数量的中断向量，并根据需要设置中断亲和性
+    +-> __pci_enable_msix_range() //启用MSI-X中断,分配指定范围内的中断向量
         +-> __pci_enable_msix()
-            +-> msix_capability_init()
-                +-> pci_msi_setup_msi_irqs()
+            +-> msix_capability_init() //初始化设备的MSI-X能力。配置MSI-X相关寄存器和数据结构。
+                +-> pci_msi_setup_msi_irqs() //设置MSI或MSI-X中断请求（IRQ）。它为每个中断向量分配IRQ资源，并配置相应的中断处理程序。
+                    +-> arch_setup_msi_irqs()
 ```
 
 msix_capability_init会对msi capability进行一些配置。
@@ -284,23 +284,30 @@ msix_capability_init会对msi capability进行一些配置。
 static int pci_msi_setup_msi_irqs(struct pci_dev *dev, int nvec, int type)
 {
 	struct irq_domain *domain;
-
-	domain = dev_get_msi_domain(&dev->dev);      
+    
+    // 调用 dev_get_msi_domain 函数获取设备的中断域（MSI domain）。
+    // 中断域（irq_domain）是一种数据结构，用于管理中断映射和分配。
+	domain = dev_get_msi_domain(&dev->dev);
+    
+    // 检查是否成功获取中断域，并且中断域是否为层次结构。
+    // 如果是层次结构，调用 msi_domain_alloc_irqs 函数分配中断向量。
+    // 该函数会根据中断域的配置和层次结构进行中断向量的分配。
 	if (domain && irq_domain_is_hierarchy(domain))
 		return msi_domain_alloc_irqs(domain, &dev->dev, nvec);
 	
+    // 如果没有获取到层次结构的中断域，则调用 arch_setup_msi_irqs 函数。
+    // 这是一个架构特定的函数，用于在特定硬件架构上设置 MSI 或 MSI-X 中断。
 	return arch_setup_msi_irqs(dev, nvec, type);
-
 }
 ```
 
-这里的irq_domain获取的是pcie device结构体中定义的dev->msi_domain.
+这里的irq_domain获取的是pcie device结构体中定义的`dev->msi_domain`.
 这里的msi_domain是在哪里定义的呢？
 在drivers/irqchip/irq-gic-v3-its-pci-msi.c中， kernel启动时会:
 
 ```c
 its_pci_msi_init()
-	+-> its_pci_msi_init()
+	+-> its_pci_of_msi_init()
 		+-> its_pci_msi_init_one()
 			+-> pci_msi_create_irq_domain(handle, &its_pci_msi_domain_info,parent)
 ```
@@ -370,6 +377,54 @@ request_irq()
 ```
 
 从这个流程可以看出，MSI是通过irq_write_msi_msg往一个地址发一个消息来激活一个中断。
+
+**arch_setup_msi_irqs()**
+
+`arch_setup_msi_irqs` 是一个弱符号函数（用 `__weak` 修饰），用于在特定的硬件架构上设置 MSI（Message Signaled Interrupts）或 MSI-X 中断。弱符号意味着这个函数可以被平台特定的实现覆盖，从而实现特定平台的定制行为。
+
+```
+int __weak arch_setup_msi_irqs(struct pci_dev *dev, int nvec, int type)
+{
+	struct msi_controller *chip = dev->bus->msi;
+	struct msi_desc *entry;
+	int ret;
+    
+    // 检查设备所在总线是否有自定义的 MSI 控制器。
+    // 如果有，并且该控制器提供了 setup_irqs 方法，则调用该方法进行中断设置，并返回结果。
+	if (chip && chip->setup_irqs)
+		return chip->setup_irqs(chip, dev, nvec, type);
+	/*
+	 * If an architecture wants to support multiple MSI, it needs to
+	 * override arch_setup_msi_irqs()
+	 * 如果中断类型是 MSI（而不是 MSI-X），并且请求的中断向量数量大于 1，则返回 1。
+	 * 这意味着当前架构不支持多个 MSI 向量，调用者需要处理这个情况。
+	 */
+	if (type == PCI_CAP_ID_MSI && nvec > 1)
+		return 1;
+		
+    /* 遍历设备的每个 MSI 条目，调用 arch_setup_msi_irq 函数为每个条目设置中断。
+     * 如果设置中断失败（返回值小于 0），则返回错误码。
+     * 如果设置中断时遇到资源不足的情况（返回值大于 0），则返回 -ENOSPC 表示没有足够的资源。
+     */
+	for_each_pci_msi_entry(entry, dev) {
+		ret = arch_setup_msi_irq(dev, entry);
+		if (ret < 0)
+			return ret;
+		if (ret > 0)
+			return -ENOSPC;
+	}
+
+	return 0;
+}
+```
+
+
+
+如果请求多个 MSI 向量且当前架构不支持，则返回 1。具体架构可以通过覆盖此函数实现对多个 MSI 向量的支持。
+
+
+
+
 
 
 
