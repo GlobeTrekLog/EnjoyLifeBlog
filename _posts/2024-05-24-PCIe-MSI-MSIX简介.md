@@ -161,13 +161,9 @@ int pci_alloc_irq_vectors(struct pci_dev *dev,
 
 ```c
 #define PCI_IRQ_LEGACY		(1 << 0) /* Allow legacy interrupts */
-
 #define PCI_IRQ_MSI		    (1 << 1) /* Allow MSI interrupts */
-
 #define PCI_IRQ_MSIX		(1 << 2) /* Allow MSI-X interrupts */
-
 #define PCI_IRQ_AFFINITY	(1 << 3) /* Auto-assign affinity, 将中断分布到系统中的多个 CPU 核心上*/
-
 #define PCI_IRQ_ALL_TYPES \
         (PCI_IRQ_LEGACY | PCI_IRQ_MSI | PCI_IRQ_MSIX)    //可以用来请求任何可能类型的中断。
 ```
@@ -176,11 +172,11 @@ int pci_alloc_irq_vectors(struct pci_dev *dev,
 
 `PCI_IRQ_AFFINITY`可以作为额外的设置，目的将中断分布到系统中的多个 CPU 核心上，以优化系统性能和负载平衡。有以下三点作用。
 
-**中断负载平衡**：在多核系统中，如果所有中断都由一个 CPU 核心处理，可能会导致该核心负载过重，影响系统性能。通过启用 `PCI_IRQ_AFFINITY`，内核可以将中断分布到多个 CPU 核心上，避免某个核心负载过重，从而提高系统整体性能。
+- **中断负载平衡**：在多核系统中，如果所有中断都由一个 CPU 核心处理，可能会导致该核心负载过重，影响系统性能。通过启用 `PCI_IRQ_AFFINITY`，内核可以将中断分布到多个 CPU 核心上，避免某个核心负载过重，从而提高系统整体性能。
 
-**优化中断处理延迟**：通过将中断分布到多个 CPU 核心上，可以减少中断处理延迟，提高系统响应速度。特别是在高性能计算或需要低延迟的应用场景中，这种优化尤为重要。
+- **优化中断处理延迟**：通过将中断分布到多个 CPU 核心上，可以减少中断处理延迟，提高系统响应速度。特别是在高性能计算或需要低延迟的应用场景中，这种优化尤为重要。
 
-**提高系统吞吐量**：多个 CPU 核心并行处理中断，可以提高系统的总吞吐量，使系统能够处理更多的中断请求。
+- **提高系统吞吐量**：多个 CPU 核心并行处理中断，可以提高系统的总吞吐量，使系统能够处理更多的中断请求。
 
 在启用 `PCI_IRQ_AFFINITY` 时，内核会自动将中断向量分布到系统中的可用 CPU 核心上。具体分布策略由内核决定，可以通过查看 `/proc/interrupts` 文件来检查中断向量的分布情况。
 
@@ -314,9 +310,9 @@ static int pci_msi_setup_msi_irqs(struct pci_dev *dev, int nvec, int type)
 
 ```c
 its_pci_msi_init()
-	+-> its_pci_of_msi_init()
-		+-> its_pci_msi_init_one()
-			+-> pci_msi_create_irq_domain(handle, &its_pci_msi_domain_info,parent)
+    +-> its_pci_of_msi_init()
+        +-> its_pci_msi_init_one()
+            +-> pci_msi_create_irq_domain(handle, &its_pci_msi_domain_info,parent)
 ```
 
 pci_msi_create_irq_domain中会去创建pci_msi irq_domain, 传递的参数分别是its_pci_msi_domain_info以及设置parent为its irq_domain.
@@ -354,10 +350,10 @@ static const struct irq_domain_ops msi_domain_ops = {
 
 ```c
 msi_domain_alloc_irqs()
-	// 对应的是its_pci_msi_ops中的its_pci_msi_prepare
-	+-> msi_domain_prepare_irqs()
-	// 分配IRQ number
-	+-> __irq_domain_alloc_irqs()
+    // 对应的是its_pci_msi_ops中的its_pci_msi_prepare
+    +-> msi_domain_prepare_irqs()
+    // 分配IRQ number
+    +-> __irq_domain_alloc_irqs()
 ```
 
 msi_domain_prepare_irqs()对应的是its_msi_prepare函数，会去创建一个its_device.
@@ -374,13 +370,13 @@ kernel/irq/manage.c
 ```c
 request_irq()
     +-> __setup_irq()
-    	+-> irq_activate()
-   			+-> msi_domain_activate()
-   				// msi_domain_info中定义的irq_chip_write_msi_msg
-        		+-> irq_chip_write_msi_msg()
-        			// irq_chip对应的是pci_msi_create_irq_domain中关联的its_msi_irq_chip
-            		+-> data->chip->irq_write_msi_msg(data, msg);
-            				+-> pci_msi_domain_write_msg()
+        +-> irq_activate()
+   	        +-> msi_domain_activate()
+   	            // msi_domain_info中定义的irq_chip_write_msi_msg
+                +-> irq_chip_write_msi_msg()
+                    // irq_chip对应的是pci_msi_create_irq_domain中关联的its_msi_irq_chip
+                    +-> data->chip->irq_write_msi_msg(data, msg);
+                            +-> pci_msi_domain_write_msg()
 ```
 
 从这个流程可以看出，MSI是通过irq_write_msi_msg往一个地址发一个消息来激活一个中断。
