@@ -67,14 +67,17 @@ MSI Capability的ID为5， 共有四种组成方式，分别是32和64位的Mess
 ![image-20240524171357651](./img/2024-05-24-PCIe-MSI-MSIX简介.assets/image-20240524171357651.png)
 
 - MSI enable 控制MSI是否使能，
-- Multiple Message Capable表示设备能够支持的中断向量数量， 
-- Multi Message enable表示实际使用的中断向量数量， 
+- Multiple Message Capable：设备支持的最大的MSI个数。一般由firmware设定。
+- Multi Message enable：表示实际使用的中断向量数量， 可申请的MSI个数，若申请8个，数值n=3，即2^n=8. 数值为3. 一般又驱动软件设定。
 - 64bit Address Capable表示使用32bit格式还是64bit格式。
+- Per-Vector Masking Capable：打开单个vector mask控制，Mask Bits Register开始起作用。
 
 **Message Address**: 当MSI enable时，保存中断控制器种接收MSI消息的地址。
 **Message Data**： 当MSI enable时，保存MSI报文的数据。
 **Mask Bits**： 可选，Mask Bits字段由32位组成，其中每一位对应一种MSI中断请求。
 **Pending Bits**： 可选，需要与Mask bits配合使用， 可以防止中断丢失。当Mask bits为1的时候，设备发送的MSI中断请求并不会发出，会将pending bits置为1，当mask bits变为0时，MSI会成功发出，pending位会被清除。
+
+
 
 #### 2.2 MSI-X capability
 
@@ -422,7 +425,213 @@ int __weak arch_setup_msi_irqs(struct pci_dev *dev, int nvec, int type)
 
 如果请求多个 MSI 向量且当前架构不支持，则返回 1。具体架构可以通过覆盖此函数实现对多个 MSI 向量的支持。
 
+假如有覆盖arch_setup_msi_irqs()函数，可以想下面这样修改：
 
+如果你希望在x86和x86_64架构上使MSI支持多个中断向量，而默认的`arch_setup_msi_irqs()`函数中包含了`if (type == PCI_CAP_ID_MSI && nvec > 1) return 1;`这一行代码，那么需要确保内核配置正确，并且你的驱动程序正确调用相关API。
+
+### 解决方法
+
+1. **确保内核配置正确**：
+   - 确保内核配置启用了MSI和MSI-X支持：
+     ```text
+     CONFIG_PCI_MSI=y
+     ```
+
+2. **实现和使用自定义的MSI设置函数**：
+   - 如果需要，你可以覆盖默认的弱符号函数`arch_setup_msi_irqs()`，实现一个支持多个MSI中断向量的版本。以下是一个示例实现：
+
+### 覆盖 `arch_setup_msi_irqs` 函数
+
+具体代码见下文
+
+### 使用正确的API分配多个MSI中断
+
+在驱动程序中使用`pci_alloc_irq_vectors_affinity` API为设备分配多个MSI中断向量：
+
+```c
+#include <linux/pci.h>
+#include <linux/interrupt.h>
+
+static int my_pci_probe(struct pci_dev *pdev, const struct pci_device_id *id)
+{
+    int nvec, ret;
+
+    ret = pci_enable_device(pdev);
+    if (ret)
+        return ret;
+
+    // 尝试分配最多 8 个 MSI 或 MSI-X 中断向量
+    nvec = pci_alloc_irq_vectors_affinity(pdev, 1, 8, PCI_IRQ_MSI | PCI_IRQ_MSIX | PCI_IRQ_AFFINITY, NULL);
+    if (nvec < 0) {
+        pci_disable_device(pdev);
+        return nvec;
+    }
+
+    // 注册中断处理程序
+    for (int i = 0; i < nvec; i++) {
+        ret = request_irq(pci_irq_vector(pdev, i), my_irq_handler, 0, "my_pci_driver", pdev);
+        if (ret) {
+            // 如果失败，释放已分配的中断向量
+            while (i--)
+                free_irq(pci_irq_vector(pdev, i), pdev);
+            pci_free_irq_vectors(pdev);
+            pci_disable_device(pdev);
+            return ret;
+        }
+    }
+
+    // 其他初始化操作
+
+    return 0;
+}
+
+static void my_pci_remove(struct pci_dev *pdev)
+{
+    int nvec = pci_msix_vec_count(pdev);
+
+    // 释放中断处理程序
+    for (int i = 0; i < nvec; i++)
+        free_irq(pci_irq_vector(pdev, i), pdev);
+
+    pci_free_irq_vectors(pdev);
+    pci_disable_device(pdev);
+}
+
+static struct pci_driver my_pci_driver = {
+    .name = "my_pci_driver",
+    .id_table = my_pci_id_table,
+    .probe = my_pci_probe,
+    .remove = my_pci_remove,
+};
+
+module_pci_driver(my_pci_driver);
+```
+
+通过覆盖默认的`arch_setup_msi_irqs`函数，并在驱动程序中正确使用`pci_alloc_irq_vectors_affinity` API，你可以在x86和x86_64架构上实现MSI支持多个中断向量。这样，你可以充分利用MSI的优势，提高系统中断处理的效率和性能。
+
+将这些内容放在合适的位置取决于你是想覆盖现有的内核函数还是创建一个新的函数。在这种情况下，由于我们要覆盖现有的弱符号函数 `arch_setup_msi_irqs` 以支持多个 MSI 中断向量，我们可以将这段代码放在一个内核模块中或直接在内核源码树的合适位置进行修改。
+
+### 6. 作为内核模块
+
+如果你希望以模块的形式加载这段代码，你可以将其放在一个新的内核模块中：
+
+#### 创建一个新的内核模块
+1. **创建文件 `arch_msi_setup.c`**：
+   
+   ```c
+   // arch_msi_setup.c
+   #include <linux/module.h>
+   #include <linux/pci.h>
+   #include <linux/msi.h>
+   #include <linux/irq.h>
+   #include <linux/irqdomain.h>
+   
+   int arch_setup_msi_irqs(struct pci_dev *dev, int nvec, int type)
+   {
+       struct msi_controller *chip = dev->bus->msi;
+       struct msi_desc *entry;
+       int ret;
+   
+       if (chip && chip->setup_irqs)
+           return chip->setup_irqs(chip, dev, nvec, type);
+   
+       for_each_pci_msi_entry(entry, dev) {
+           ret = arch_setup_msi_irq(dev, entry);
+           if (ret < 0)
+               return ret;
+           if (ret > 0)
+               return -ENOSPC;
+       }
+   
+       return 0;
+   }
+   
+   static int __init arch_msi_setup_init(void)
+   {
+       printk(KERN_INFO "Custom arch_setup_msi_irqs module loaded\n");
+       return 0;
+   }
+   
+   static void __exit arch_msi_setup_exit(void)
+   {
+       printk(KERN_INFO "Custom arch_setup_msi_irqs module unloaded\n");
+   }
+   
+   module_init(arch_msi_setup_init);
+   module_exit(arch_msi_setup_exit);
+   
+   MODULE_LICENSE("GPL");
+   MODULE_DESCRIPTION("Custom arch_setup_msi_irqs to support multiple MSI vectors");
+   MODULE_AUTHOR("Your Name");
+   ```
+   
+2. **编写 `Makefile`**：
+   ```makefile
+   obj-m += arch_msi_setup.o
+   
+   all:
+       make -C /lib/modules/$(shell uname -r)/build M=$(PWD) modules
+   
+   clean:
+       make -C /lib/modules/$(shell uname -r)/build M=$(PWD) clean
+   ```
+
+3. **编译和加载模块**：
+   ```bash
+   make
+   sudo insmod arch_msi_setup.ko
+   sudo rmmod arch_msi_setup.ko
+   ```
+
+### 7. 直接修改内核源码
+
+如果你希望直接修改内核源码来覆盖这个函数，你可以在内核源码树中找到并修改实现`arch_setup_msi_irqs`的文件。通常这个文件位于与架构相关的目录中，例如`arch/x86/kernel/`。
+
+#### 修改内核源码
+1. **找到并修改文件**：
+   - 打开并编辑适当的源文件，例如`arch/x86/kernel/msi.c`。
+   ```c
+   // 在适当位置添加你的实现
+   #include <linux/pci.h>
+   #include <linux/msi.h>
+   #include <linux/irq.h>
+   #include <linux/irqdomain.h>
+   
+   int arch_setup_msi_irqs(struct pci_dev *dev, int nvec, int type)
+   {
+       struct msi_controller *chip = dev->bus->msi;
+       struct msi_desc *entry;
+       int ret;
+   
+       if (chip && chip->setup_irqs)
+           return chip->setup_irqs(chip, dev, nvec, type);
+   
+       for_each_pci_msi_entry(entry, dev) {
+           ret = arch_setup_msi_irq(dev, entry);
+           if (ret < 0)
+               return ret;
+           if (ret > 0)
+               return -ENOSPC;
+       }
+   
+       return 0;
+   }
+   ```
+
+2. **编译并安装内核**：
+   - 编译修改后的内核，并安装新内核。
+   ```bash
+   make -j$(nproc)
+   sudo make modules_install
+   sudo make install
+   sudo reboot
+   ```
+
+### 总结
+- **内核模块**：如果你希望灵活地加载和卸载自定义的`arch_setup_msi_irqs`实现，可以将其作为一个内核模块。
+- **直接修改内核源码**：如果你希望永久覆盖内核中的默认实现，可以直接修改内核源码树中的相应文件。
+
+无论你选择哪种方法，都需要确保你的代码在编译和运行时没有错误，并且能够正确处理多个MSI中断向量。
 
 
 
@@ -564,30 +773,6 @@ Documentation/PCI/MSI-HOWTO.txt
    - **Windows**：Windows中断处理程序接收到中断请求后，会根据设备的中断向量信息调用相应的中断服务例程（ISR）。
 6. **中断处理函数执行**：中断处理函数执行相应的中断处理逻辑，例如读取数据、清除中断状态等。
 7. **中断处理完成**：中断处理函数返回，中断处理结束。
-
-
-
-### MSI Capability Structures
-
-
-
-
-
-
-
-
-
-**Multiple Message Capable**：设备支持的最大的MSI个数。一般由firmware设定。
-
-**Multiple Message Enable**: 可申请的MSI个数，若申请8个，数值n=3，即2^n=8. 数值为3. 一般又驱动软件设定。
-
-**64-bit Address Capable**：使用64bit 还是32bit的Message Address。
-
-**Per-Vector Masking Capable**：打开单个vector mask控制，Mask Bits Register开始起作用。
-
-
-
-### MSI-X Capability Structure
 
 
 
