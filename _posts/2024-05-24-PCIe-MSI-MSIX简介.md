@@ -161,9 +161,13 @@ int pci_alloc_irq_vectors(struct pci_dev *dev,
 
 ```c
 #define PCI_IRQ_LEGACY		(1 << 0) /* Allow legacy interrupts */
+
 #define PCI_IRQ_MSI		    (1 << 1) /* Allow MSI interrupts */
+
 #define PCI_IRQ_MSIX		(1 << 2) /* Allow MSI-X interrupts */
+
 #define PCI_IRQ_AFFINITY	(1 << 3) /* Auto-assign affinity, 将中断分布到系统中的多个 CPU 核心上*/
+
 #define PCI_IRQ_ALL_TYPES \
         (PCI_IRQ_LEGACY | PCI_IRQ_MSI | PCI_IRQ_MSIX)    //可以用来请求任何可能类型的中断。
 ```
