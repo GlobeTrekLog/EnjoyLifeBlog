@@ -49,6 +49,7 @@ MSI和MSI-X的规格对比：
 在arm64中，MSI/MSI-X对应的是LPI中断， 在之前的文章【ARM GICv3 ITS介绍及代码分析】有介绍过，外设通过写GITS_TRANSLATER寄存器，可以发起LPI中断， 所以相应的，如果在没有使能SMMU时，MSI的message address指的就是ITS_TRANSLATER的地址。
 
 ### 2. MSI/MSI-X capability
+
 #### 2.1 MSI capability
 
 MSI Capability的ID为5， 共有四种组成方式，分别是32和64位的Message结构，32位和64位带中断Masking的结构。
@@ -160,11 +161,14 @@ int pci_alloc_irq_vectors(struct pci_dev *dev,
 - `flags`：用于区分设备和驱动能够使用的中断类型，一般有4种：
 
 ```c
-
 #define PCI_IRQ_LEGACY		(1 << 0) /* Allow legacy interrupts */
+
 #define PCI_IRQ_MSI		    (1 << 1) /* Allow MSI interrupts */
+
 #define PCI_IRQ_MSIX		(1 << 2) /* Allow MSI-X interrupts */
+
 #define PCI_IRQ_AFFINITY	(1 << 3) /* Auto-assign affinity, 将中断分布到系统中的多个 CPU 核心上*/
+
 #define PCI_IRQ_ALL_TYPES \
         (PCI_IRQ_LEGACY | PCI_IRQ_MSI | PCI_IRQ_MSIX)    //可以用来请求任何可能类型的中断。
 
