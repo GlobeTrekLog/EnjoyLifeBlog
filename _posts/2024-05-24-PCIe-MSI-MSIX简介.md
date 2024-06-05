@@ -526,11 +526,16 @@ module_pci_driver(my_pci_driver);
    
    ```c
    // arch_msi_setup.c
-   #include <linux/module.h>
-   #include <linux/pci.h>
-   #include <linux/msi.h>
-   #include <linux/irq.h>
-   #include <linux/irqdomain.h>
+   #include <linux/module.h> 
+   
+   #include <linux/pci.h> 
+   
+   #include <linux/msi.h> 
+   
+   #include <linux/irq.h> 
+   
+   #include <linux/irqdomain.h> 
+   
    
    int arch_setup_msi_irqs(struct pci_dev *dev, int nvec, int type)
    {
