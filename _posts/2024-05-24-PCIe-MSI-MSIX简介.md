@@ -90,8 +90,11 @@ MSI-x的capability寄存器结构和MSI有一些差异：
 
 ![image-20240525155445961](./img/2024-05-24-PCIe-MSI-MSIX简介.assets/image-20240525155445961.png)
 
-**Capability ID**:记载MSI-X Capability结构的ID号，其值为0x11
-**Message Control**: 存放当前PCIe设备使用MSI-x机制进行中断请求的状态和控制信息
+**Capability ID**:记载MSI-X Capability结构的ID号，其值为0x11。
+
+**Message Control**: 存放当前PCIe设备使用MSI-x机制进行中断请求的状态和控制信息。
+
+
 
 ![image-20240525155459625](./img/2024-05-24-PCIe-MSI-MSIX简介.assets/image-20240525155459625.png)
 
@@ -100,8 +103,11 @@ MSI-x的capability寄存器结构和MSI有一些差异：
 - Table Size， 存放MSI-X table的大小。
 
 **Table BIR**：BAR Indicator Register。该字段存放MSI-X Table所在的位置，PCIe总线规范规定MSI-X Table存放在设备的BAR空间中。该字段表示设备使用BAR0 ~ 5寄存器中的哪个空间存放MSI-X table。
+
 **Table Offset**: 存放MSI-X Table在相应BAR空间中的偏移。
+
 **PBA(Pending Bit Array) BIR**： 存放Pending Table在PCIe设备的哪个BAR空间中。在通常情况下，Pending Table和MSI-X Table存放在PCIe设备的同一个BAR空间中。
+
 **PBA Offset**： 该字段存放Pending Table在相应BAR空间中的偏移。
 
 通过Table BIR和Table offset知道了MSI-Xtable在哪一个bar中以及在bar中的偏移，就可以找到对应的MSI-X table。
@@ -601,6 +607,7 @@ module_pci_driver(my_pci_driver);
 #### 修改内核源码
 1. **找到并修改文件**：
    - 打开并编辑适当的源文件，例如`arch/x86/kernel/msi.c`。
+   
    ```c
    // 在适当位置添加你的实现
    #include <linux/pci.h>
@@ -628,15 +635,17 @@ module_pci_driver(my_pci_driver);
        return 0;
    }
    ```
-
+   
 2. **编译并安装内核**：
    - 编译修改后的内核，并安装新内核。
+   - 
    ```bash
    make -j$(nproc)
    sudo make modules_install
    sudo make install
    sudo reboot
    ```
+
 
 ### 总结
 - **内核模块**：如果你希望灵活地加载和卸载自定义的`arch_setup_msi_irqs`实现，可以将其作为一个内核模块。
