@@ -606,6 +606,7 @@ module_pci_driver(my_pci_driver);
 
 #### 修改内核源码
 1. **找到并修改文件**：
+   
    - 打开并编辑适当的源文件，例如`arch/x86/kernel/msi.c`。
    
    ```c
@@ -637,8 +638,8 @@ module_pci_driver(my_pci_driver);
    ```
    
 2. **编译并安装内核**：
+   
    - 编译修改后的内核，并安装新内核。
-   - 
    ```bash
    make -j$(nproc)
    sudo make modules_install
